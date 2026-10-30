@@ -1,0 +1,60 @@
+{
+  "$comment": "Services catalogue for the 'fit' section of the brief. Maintained by hand. Every entry below is a PLACEHOLDER: replace the wording with the organisation's own service descriptions, partner programmes and published case studies, then set placeholder to false. Run npm run catalogue:sync after editing.",
+  "items": [
+    {
+      "slug": "licensing-optimisation",
+      "kind": "service",
+      "name": "Licensing optimisation and renewal advisory",
+      "summary": "Placeholder. Review of Microsoft EA/CSP and other vendor estates ahead of renewal: rightsizing, consolidation and true-up planning.",
+      "painPoints": ["upcoming EA renewal", "licence sprawl", "budget pressure", "unused premium licences"],
+      "vendors": ["Microsoft", "Red Hat", "Sophos"],
+      "keywords": ["EA", "CSP", "renewal", "true-up", "E5", "E3"],
+      "url": null,
+      "placeholder": true
+    },
+    {
+      "slug": "security-posture-review",
+      "kind": "service",
+      "name": "Security posture review",
+      "summary": "Placeholder. Short assessment of identity, endpoint and email security against what the customer already licenses.",
+      "painPoints": ["new security leader", "cyber incident", "regulatory pressure", "under-used security features"],
+      "vendors": ["Microsoft", "Sophos"],
+      "keywords": ["CISO", "Defender", "Entra ID", "Essential Eight", "phishing"],
+      "url": null,
+      "placeholder": true
+    },
+    {
+      "slug": "cloud-migration",
+      "kind": "service",
+      "name": "Cloud migration and landing zones",
+      "summary": "Placeholder. Landing zone design, workload migration and cost governance on Azure and AWS.",
+      "painPoints": ["data centre exit", "cloud cost overruns", "new cloud platform roles"],
+      "vendors": ["Microsoft", "AWS"],
+      "keywords": ["Azure", "AWS", "landing zone", "migration", "FinOps"],
+      "url": null,
+      "placeholder": true
+    },
+    {
+      "slug": "ai-readiness",
+      "kind": "service",
+      "name": "AI adoption readiness",
+      "summary": "Placeholder. Data governance, oversharing and labelling checks before a Copilot or AI rollout, with a measured pilot.",
+      "painPoints": ["Copilot interest without a business case", "data oversharing risk", "AI policy gaps"],
+      "vendors": ["Microsoft"],
+      "keywords": ["Copilot", "Purview", "AI", "data governance"],
+      "url": null,
+      "placeholder": true
+    },
+    {
+      "slug": "managed-endpoint",
+      "kind": "service",
+      "name": "Modern workplace and managed endpoints",
+      "summary": "Placeholder. Device management, patching and support for office and frontline fleets.",
+      "painPoints": ["large frontline device fleet", "patching backlog", "Windows end of support"],
+      "vendors": ["Microsoft"],
+      "keywords": ["Intune", "Autopilot", "frontline", "Windows 11"],
+      "url": null,
+      "placeholder": true
+    }
+  ]
+}
