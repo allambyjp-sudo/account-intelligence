@@ -201,7 +201,8 @@ export async function seedFictionalAccounts(db: Db, ownerUserId: string, now = n
         userId: ownerUserId,
         accountId: b.id,
         provider: "synthetic",
-        providerThreadId: "seed-bellbird-ea",
+        // Same thread ID as the synthetic mailbox, so a demo sync extends this thread instead of duplicating it.
+        providerThreadId: "bb-ea",
         subject: "Re: EA renewal timing",
         participants: [{ address: "priya.natarajan@bellbird-logistics.example", name: "Priya Natarajan", role: "from" }],
         firstMessageAt: ago(8),
@@ -293,6 +294,15 @@ export async function seedFictionalAccounts(db: Db, ownerUserId: string, now = n
       confidence: "medium",
       ...cited(sAbout),
     });
+
+    // Matching rules for the synthetic mailbox: a distributor and a newsletter sender.
+    await tx
+      .insert(t.emailMatchRules)
+      .values([
+        { userId: ownerUserId, kind: "partner", pattern: "distributor.example" },
+        { userId: ownerUserId, kind: "ignore", pattern: "newsletters.example" },
+      ])
+      .onConflictDoNothing();
 
     return [b.id, k.id, southern!.id];
   });

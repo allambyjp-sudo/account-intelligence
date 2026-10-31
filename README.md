@@ -16,7 +16,7 @@ click, and email tied to each account.
 | 3 | Live monitoring: schedulers, signal classification, timeline, share price | **Done** |
 | 4 | Sales advisor and account memory: notes, embeddings, "what's changed" | **Done** |
 | 5 | Meeting prep: one-pager, PDF/DOCX export | **Done** |
-| 6 | Email: Graph ingestion against a test mailbox with synthetic data, matching, seller inbox | Planned |
+| 6 | Email: Graph ingestion against a test mailbox with synthetic data, matching, seller inbox | **Done** (real mailboxes off until approved) |
 | 7 | Conver: ConverProvider, Datacom tenant hosting, IT and privacy review | Planned |
 
 ## Ground rules

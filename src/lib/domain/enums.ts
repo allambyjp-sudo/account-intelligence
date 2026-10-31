@@ -186,3 +186,9 @@ export type ResearchStatus = (typeof RESEARCH_STATUS)[number];
 
 export const MEMORY_KIND = ["note", "meeting", "email_summary", "signal", "brief_section"] as const;
 export type MemoryKind = (typeof MEMORY_KIND)[number];
+
+export const MAIL_CONNECTION_STATUS = ["active", "error", "disconnected"] as const;
+export type MailConnectionStatus = (typeof MAIL_CONNECTION_STATUS)[number];
+
+export const MATCH_RULE_KIND = ["domain", "address", "partner", "ignore"] as const;
+export type MatchRuleKind = (typeof MATCH_RULE_KIND)[number];

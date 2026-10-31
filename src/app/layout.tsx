@@ -28,6 +28,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <nav className="flex gap-1 text-sm">
                 {[
                   ["/", "Portfolio"],
+                  ["/inbox", "Inbox"],
                   ["/accounts/new", "Add account"],
                   ["/sources", "Sources"],
                 ].map(([href, label]) => (

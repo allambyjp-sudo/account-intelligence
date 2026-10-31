@@ -330,6 +330,41 @@ export const emailThreads = pgTable("email_threads", {
   classification: text("classification", { enum: E.EMAIL_CLASSIFICATION }),
   createdAt: ts("created_at").notNull().defaultNow(),
   updatedAt: ts("updated_at").notNull().defaultNow(),
+  matchReason: text("match_reason"),
+  candidateAccountIds: uuid("candidate_account_ids").array().notNull().default(sql`'{}'`),
+});
+
+export const mailConnections = pgTable("mail_connections", {
+  id: id(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  provider: text("provider", { enum: E.EMAIL_PROVIDER }).notNull(),
+  mailbox: text("mailbox").notNull(),
+  status: text("status", { enum: E.MAIL_CONNECTION_STATUS }).notNull().default("active"),
+  sealedTokens: text("sealed_tokens"),
+  syncState: jsonb("sync_state").$type<Record<string, unknown>>().notNull().default({}),
+  /** Webhook secret; defaults in SQL to 64 random hex characters. */
+  clientState: text("client_state")
+    .notNull()
+    .default(sql`replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', '')`),
+  subscriptionId: text("subscription_id"),
+  subscriptionExpiresAt: ts("subscription_expires_at"),
+  lastSyncedAt: ts("last_synced_at"),
+  lastError: text("last_error"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+
+export const emailMatchRules = pgTable("email_match_rules", {
+  id: id(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  kind: text("kind", { enum: E.MATCH_RULE_KIND }).notNull(),
+  pattern: text("pattern").notNull(),
+  accountId: uuid("account_id").references(() => accounts.id, { onDelete: "cascade" }),
+  learned: boolean("learned").notNull().default(false),
+  createdAt: ts("created_at").notNull().defaultNow(),
 });
 
 export const emailSummaries = pgTable("email_summaries", {
@@ -468,4 +503,6 @@ export type ServicesCatalogueItem = typeof servicesCatalogueItems.$inferSelect;
 export type IntakeRequest = typeof intakeRequests.$inferSelect;
 export type PricePoint = typeof pricePoints.$inferSelect;
 export type MemoryChunk = typeof memoryChunks.$inferSelect;
+export type MailConnection = typeof mailConnections.$inferSelect;
+export type EmailMatchRule = typeof emailMatchRules.$inferSelect;
 export type ResearchRun = typeof researchRuns.$inferSelect;

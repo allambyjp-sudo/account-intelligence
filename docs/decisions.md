@@ -205,3 +205,32 @@ at medium confidence: good evidence for the website's own stack, weaker for the 
   Helvetica, so no font files to ship). The export route checks ownership and is not cached.
 - The meeting time is entered and shown in Melbourne time, with daylight saving taken from the
   platform's time zone data.
+
+## 18. Email (31 Oct 2026)
+
+- **No real mailbox until approved, enforced in code.** Connecting Outlook or Gmail requires
+  `MAILBOX_CONNECT_APPROVED=true` and `LLM_PROVIDER=conver`. `ALLOW_MAILBOX_WITHOUT_CONVER=true`
+  lifts the second check, for a personal test mailbox only. The synthetic mailbox is always
+  available and holds only fictional mail.
+- **Only account mail is stored.** Internal-only mail, ignored senders, mail that matches no
+  account, and mail for excluded accounts are never written. Rejecting a thread deletes its
+  summaries and leaves a tombstone, so it isn't re-matched on the next sync.
+- **Matching order:** seller-taught address rules; sender domain (account domains plus
+  taught domain rules; personal domains never count); known contacts; partner/distributor mail
+  that names exactly one account (always confirmed); then the model. Under 0.8 confidence,
+  or more than one candidate, goes to the Confirm queue.
+- **Learning:** confirming a business domain teaches a domain rule; a personal address, or a
+  domain several accounts share, teaches an address rule; distributor mail teaches nothing.
+- **Account names are matched without legal suffixes** ("Bellbird Logistics" names "Bellbird
+  Logistics Group Pty Ltd"). Found by the end-to-end test: distributors don't use legal names.
+- **Summaries and metadata by default.** Full bodies only if the seller opts in. A summary failure
+  keeps the preview rather than losing the email.
+- **If we sent the last message, we can't owe a reply.** The classifier's `needs_reply` becomes
+  `waiting_on_them` in that case. Threads waiting more than 5 days rise in the inbox as nudges.
+- **Email is contact.** Matched mail moves the account's and the stakeholder's last contact forward
+  and closes an open quiet-customer alert.
+- **Outlook:** delegated Mail.Read with the MSAL token cache sealed in the database
+  (`TOKEN_ENCRYPTION_KEY`), delta queries on Inbox and Sent Items, and change notifications when
+  `PUBLIC_BASE_URL` is HTTPS. Notifications only trigger a sync, and only when their client state
+  matches. Without a public URL, the 15-minute sweep is the fallback.
+- **Gmail** (optional): read-only scope with PKCE, refresh token sealed, incremental by date.

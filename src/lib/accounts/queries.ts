@@ -97,7 +97,12 @@ export async function loadAccountPage(db: Db, userId: string, accountId: string)
       .where(and(eq(t.signals.accountId, accountId), eq(t.signals.relevant, true)))
       .orderBy(desc(t.signals.occurredAt))
       .limit(100),
-    db.select().from(t.emailThreads).where(eq(t.emailThreads.accountId, accountId)).orderBy(desc(t.emailThreads.lastMessageAt)).limit(50),
+    db
+      .select()
+      .from(t.emailThreads)
+      .where(and(eq(t.emailThreads.accountId, accountId), inArray(t.emailThreads.matchStatus, ["auto", "confirmed"])))
+      .orderBy(desc(t.emailThreads.lastMessageAt))
+      .limit(50),
     db
       .select()
       .from(t.recommendations)

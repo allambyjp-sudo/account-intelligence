@@ -6,7 +6,7 @@ import type { z } from "zod";
  * SESSION_SECRET, so a login-state cookie can never be replayed as a session cookie. Tampered,
  * expired or wrong-purpose tokens unseal to null.
  */
-export type SealPurpose = "session" | "login";
+export type SealPurpose = "session" | "login" | "mailbox";
 
 const IV_BYTES = 12;
 const TAG_BYTES = 16;

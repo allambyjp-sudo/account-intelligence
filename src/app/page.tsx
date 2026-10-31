@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { loadPortfolio } from "@/lib/accounts/queries";
+import { loadInbox } from "@/lib/email/inbox";
 import { requireUser } from "@/lib/auth/current-user";
 import { getDb } from "@/lib/db/client";
 import { timeAgo } from "@/lib/format";
@@ -8,6 +9,7 @@ import { Badge, Card, Empty, FictionalBadge } from "./components";
 export default async function PortfolioPage() {
   const user = await requireUser("/");
   const rows = await loadPortfolio(getDb(), user.id);
+  const inbox = await loadInbox(getDb(), user.id);
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
@@ -61,8 +63,33 @@ export default async function PortfolioPage() {
         )}
       </div>
       <aside>
-        <Card title="Seller inbox">
-          <Empty>Your cross-account email priority list arrives in Phase 6, against a test mailbox with synthetic data.</Empty>
+        <Card
+          title="Seller inbox"
+          action={
+            <Link href="/inbox" className="text-xs text-brand-700 hover:underline">
+              Open →
+            </Link>
+          }
+        >
+          {inbox.confirm.length > 0 && (
+            <Link href="/inbox" className="mb-2 block rounded-md bg-amber-50 px-2 py-1 text-xs text-amber-900">
+              {inbox.confirm.length} email{inbox.confirm.length === 1 ? "" : "s"} to confirm
+            </Link>
+          )}
+          {inbox.priority.length === 0 ? (
+            <Empty>No account email yet. Connect a mailbox from the inbox.</Empty>
+          ) : (
+            <ul className="space-y-2">
+              {inbox.priority.slice(0, 5).map(({ thread, accountName, why }) => (
+                <li key={thread.id} className="text-sm">
+                  <div className="text-xs text-slate-500">
+                    {accountName} · {why}
+                  </div>
+                  <div className="text-slate-900">{thread.subject}</div>
+                </li>
+              ))}
+            </ul>
+          )}
         </Card>
       </aside>
     </div>
