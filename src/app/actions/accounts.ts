@@ -8,6 +8,7 @@ import { requireUser } from "@/lib/auth/current-user";
 import { getDb } from "@/lib/db/client";
 import * as t from "@/lib/db/schema";
 import { confirmIntake, confirmSchema } from "@/lib/intake/intake";
+import { monitorAccountJob } from "@/lib/jobs/monitor";
 import { researchAccountJob, resolveIntakeJob } from "@/lib/jobs/research";
 import { getJobSender } from "@/lib/jobs/sender";
 import { createResearchRun } from "@/lib/research/run";
@@ -54,7 +55,10 @@ export async function completeIntake(form: FormData) {
     isKeyAccount: form.get("isKeyAccount") === "on",
   });
   const { accountId, created } = await confirmIntake(getDb(), user.id, input);
-  if (created) await queueResearch(user.id, accountId);
+  if (created) {
+    await queueResearch(user.id, accountId);
+    await (await getJobSender()).send(monitorAccountJob, { accountId }, { singletonKey: accountId, startAfterSeconds: 120 });
+  }
   redirect(`/accounts/${accountId}`);
 }
 
@@ -79,6 +83,13 @@ export async function rerunResearch(form: FormData) {
   await queueResearch(user.id, account.id);
   revalidatePath(`/accounts/${account.id}`);
   redirect(`/accounts/${account.id}/brief`);
+}
+
+export async function pollNow(form: FormData) {
+  const user = await requireUser();
+  const account = await ownedAccount(user.id, z.uuid().parse(str(form, "accountId")));
+  await (await getJobSender()).send(monitorAccountJob, { accountId: account.id }, { singletonKey: account.id });
+  redirect(`/accounts/${account.id}?polling=1`);
 }
 
 const urlOrEmpty = z.union([z.literal(""), z.url({ protocol: /^https?$/ })]).optional();

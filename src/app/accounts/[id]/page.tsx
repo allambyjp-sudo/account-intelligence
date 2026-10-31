@@ -18,6 +18,8 @@ import {
 import { AutoRefresh } from "../../auto-refresh";
 import { citationNumbers, CitedText } from "../../cited";
 import Link from "next/link";
+import { pollNow } from "../../actions/accounts";
+import { Sparkline } from "../../sparkline";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -92,10 +94,17 @@ function Header({ page }: { page: AccountPage }) {
       </div>
       <div className="text-right text-xs text-slate-500">
         <div className="text-sm font-medium text-slate-800">{e?.ticker ? `${e.exchange}:${e.ticker}` : "Unlisted"}</div>
-        <div>{e?.ticker ? "Share price arrives in Phase 3" : "No share price"}</div>
-        <Link href={`/accounts/${account.id}/settings`} className="text-brand-700 hover:underline">
-          Settings
-        </Link>
+        {e?.ticker ? page.prices.length > 1 ? <Sparkline points={page.prices} /> : <div>No prices yet</div> : <div>No share price</div>}
+        <div>Last checked {timeAgo(account.lastPolledAt)}</div>
+        <div className="mt-1 flex justify-end gap-3">
+          <form action={pollNow}>
+            <input type="hidden" name="accountId" value={account.id} />
+            <button className="text-brand-700 hover:underline">Check now</button>
+          </form>
+          <Link href={`/accounts/${account.id}/settings`} className="text-brand-700 hover:underline">
+            Settings
+          </Link>
+        </div>
         <div className="mt-1">Last researched {account.lastResearchedAt ? formatDateTime(account.lastResearchedAt) : "never"}</div>
         <div>Worker last seen {timeAgo(page.workerLastSeen)}</div>
       </div>
@@ -232,7 +241,8 @@ function Timeline({ items }: { items: TimelineItem[] }) {
               {item.kind === "signal" ? (
                 <>
                   <div className="mt-0.5 text-sm font-medium text-slate-900">{item.signal.title}</div>
-                  {item.signal.summary && <p className="text-sm text-slate-600">{item.signal.summary}</p>}
+                  {item.signal.summary && <p className="line-clamp-3 whitespace-pre-line text-sm text-slate-600">{item.signal.summary}</p>}
+                  {item.signal.whyItMatters && <p className="mt-0.5 text-xs text-slate-500">Why it matters: {item.signal.whyItMatters}</p>}
                   <SourceLink source={item.source} />
                 </>
               ) : (

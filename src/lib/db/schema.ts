@@ -62,6 +62,7 @@ export const accounts = pgTable("accounts", {
   careersUrl: text("careers_url"),
   reportUrls: text("report_urls").array().notNull().default(sql`'{}'`),
   newsTerms: text("news_terms").array().notNull().default(sql`'{}'`),
+  lastPolledAt: ts("last_polled_at"),
 });
 
 export const sources = pgTable("sources", {
@@ -196,6 +197,20 @@ export const signals = pgTable("signals", {
   classifiedAt: ts("classified_at"),
   classifier: text("classifier"),
   dedupeKey: text("dedupe_key").notNull(),
+  whyItMatters: text("why_it_matters"),
+  relevant: boolean("relevant").notNull().default(true),
+});
+
+export const pricePoints = pgTable("price_points", {
+  entityId: uuid("entity_id")
+    .notNull()
+    .references(() => entities.id, { onDelete: "cascade" }),
+  tradeDate: date("trade_date").notNull(),
+  close: numeric("close", { precision: 14, scale: 4 }).notNull(),
+  currency: text("currency", { enum: ["AUD", "NZD"] }).notNull(),
+  sourceId: uuid("source_id")
+    .notNull()
+    .references(() => sources.id, { onDelete: "restrict" }),
 });
 
 /** What a recommendation rests on. At least one is required (enforced in SQL). */
@@ -426,4 +441,5 @@ export type EmailThread = typeof emailThreads.$inferSelect;
 export type EmailSummary = typeof emailSummaries.$inferSelect;
 export type ServicesCatalogueItem = typeof servicesCatalogueItems.$inferSelect;
 export type IntakeRequest = typeof intakeRequests.$inferSelect;
+export type PricePoint = typeof pricePoints.$inferSelect;
 export type ResearchRun = typeof researchRuns.$inferSelect;

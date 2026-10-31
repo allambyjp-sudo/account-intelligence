@@ -150,3 +150,22 @@ finds a source.
 Vendors visible in a site's scripts, links and generator tag are detected by rules
 (`src/lib/sources/footprint.ts`), not by the model. They are recorded as `web_footprint` evidence
 at medium confidence: good evidence for the website's own stack, weaker for the wider estate.
+
+## 15. Monitoring rules (31 Oct 2026)
+
+- Every 2 hours (`:17`), each non-dormant account is polled: Google News, the configured ANZ
+  press feeds, ASX announcements (when enabled), AusTender, the careers page and the share price.
+- Items older than 14 days never become signals, so a first poll doesn't flood the timeline.
+  Duplicates are keyed by normalised headline (news), contract ID (tenders), URL
+  (announcements, advisories), page content hash (careers) and trade date (prices).
+- A careers page's first version is a baseline. Later versions raise a signal listing the new lines.
+- Share price: fetched at most once a day per listed account (the free tier allows about 25 calls a
+  day). A 5% day or a 10% move against the 30-day average is a signal; 10% in a day is high. These
+  are rules, not model calls.
+- The classifier sees account context (legal name, industry, known people, known technology) and
+  first decides whether an item is really about the account. Name-match false positives are kept
+  but hidden (`relevant = false`), never deleted, so the decision can be audited.
+- High-importance signals raise an alert and trigger an advisor refresh (Phase 4).
+- ACSC advisories are matched to accounts by specific product names in their tech stack, never by
+  vendor alone ("Microsoft" would match every account).
+- Quiet-customer alerts: one open alert per key account past its quiet threshold, checked daily.

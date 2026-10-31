@@ -27,7 +27,7 @@ export async function loadPortfolio(db: Db, userId: string, now = new Date()): P
     db
       .select({ accountId: t.signals.accountId, at: sql<Date>`max(${t.signals.occurredAt})` })
       .from(t.signals)
-      .where(inArray(t.signals.accountId, ids))
+      .where(and(inArray(t.signals.accountId, ids), eq(t.signals.relevant, true)))
       .groupBy(t.signals.accountId),
   ]);
 
@@ -69,6 +69,7 @@ export interface AccountPage {
   sources: Map<string, t.Source>;
   workerLastSeen: Date | null;
   latestRun: t.ResearchRun | null;
+  prices: Array<{ tradeDate: string; close: number; currency: string }>;
 }
 
 /** Everything the account page shows. Returns null when the account isn't the seller's. */
@@ -89,7 +90,7 @@ export async function loadAccountPage(db: Db, userId: string, accountId: string)
       .select({ signal: t.signals, source: t.sources })
       .from(t.signals)
       .innerJoin(t.sources, eq(t.signals.sourceId, t.sources.id))
-      .where(eq(t.signals.accountId, accountId))
+      .where(and(eq(t.signals.accountId, accountId), eq(t.signals.relevant, true)))
       .orderBy(desc(t.signals.occurredAt))
       .limit(100),
     db.select().from(t.emailThreads).where(eq(t.emailThreads.accountId, accountId)).orderBy(desc(t.emailThreads.lastMessageAt)).limit(50),
@@ -144,10 +145,23 @@ export async function loadAccountPage(db: Db, userId: string, accountId: string)
     })),
   ].sort((a, b) => b.at.getTime() - a.at.getTime());
 
+  const primaryEntity = entities.find((e) => e.isPrimary) ?? null;
+  const prices = primaryEntity?.ticker
+    ? (
+        await db
+          .select()
+          .from(t.pricePoints)
+          .where(eq(t.pricePoints.entityId, primaryEntity.id))
+          .orderBy(desc(t.pricePoints.tradeDate))
+          .limit(90)
+      )
+        .reverse()
+        .map((p) => ({ tradeDate: p.tradeDate, close: Number(p.close), currency: p.currency }))
+    : [];
   const heartbeatAt = heartbeat[0]?.at;
   return {
     account,
-    primaryEntity: entities.find((e) => e.isPrimary) ?? null,
+    primaryEntity,
     entities,
     brief,
     stakeholders: stakeholders.map((s) => ({ ...s, contacts: contacts.filter((c) => c.stakeholderId === s.id) })),
@@ -158,5 +172,6 @@ export async function loadAccountPage(db: Db, userId: string, accountId: string)
     sources,
     workerLastSeen: heartbeatAt ? new Date(heartbeatAt) : null,
     latestRun: runs[0] ?? null,
+    prices,
   };
 }
