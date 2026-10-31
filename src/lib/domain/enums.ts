@@ -174,3 +174,12 @@ export type AlertKind = (typeof ALERT_KIND)[number];
 
 export const CATALOGUE_KIND = ["service", "vendor_partnership", "case_study"] as const;
 export type CatalogueKind = (typeof CATALOGUE_KIND)[number];
+
+export const INTAKE_COUNTRY = ["AU", "NZ", "ANY"] as const;
+export type IntakeCountry = (typeof INTAKE_COUNTRY)[number];
+
+export const INTAKE_STATUS = ["resolving", "ready", "failed", "completed"] as const;
+export type IntakeStatus = (typeof INTAKE_STATUS)[number];
+
+export const RESEARCH_STATUS = ["queued", "running", "succeeded", "partial", "failed"] as const;
+export type ResearchStatus = (typeof RESEARCH_STATUS)[number];

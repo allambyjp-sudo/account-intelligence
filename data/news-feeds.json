@@ -1,0 +1,16 @@
+{
+  "$comment": "Feeds the monitors read. Maintained by hand. 'verified' means the URL and format were checked against a live response (npm run sources:check updates nothing; it reports). Feeds are filtered for mentions of each account, so a general tech feed is fine. Set enabled to false to stop reading one.",
+  "feeds": [
+    { "id": "the_register", "name": "The Register", "kind": "news", "url": "https://www.theregister.com/headlines.atom", "region": "GLOBAL", "verified": false, "enabled": true },
+    { "id": "itnews", "name": "iTnews", "kind": "news", "url": "https://www.itnews.com.au/RSS/rss.ashx", "region": "AU", "verified": false, "enabled": true },
+    { "id": "crn_au", "name": "CRN Australia", "kind": "news", "url": "https://www.crn.com.au/RSS/rss.ashx", "region": "AU", "verified": false, "enabled": true },
+    { "id": "arn", "name": "ARN", "kind": "news", "url": "https://www.arnnet.com.au/rss", "region": "AU", "verified": false, "enabled": true },
+    { "id": "itbrief_au", "name": "IT Brief Australia", "kind": "news", "url": "https://itbrief.com.au/feed", "region": "AU", "verified": false, "enabled": true },
+    { "id": "itbrief_nz", "name": "IT Brief New Zealand", "kind": "news", "url": "https://itbrief.co.nz/feed", "region": "NZ", "verified": false, "enabled": true },
+    { "id": "securitybrief_au", "name": "SecurityBrief Australia", "kind": "news", "url": "https://securitybrief.com.au/feed", "region": "AU", "verified": false, "enabled": true },
+    { "id": "reseller_news_nz", "name": "Reseller News", "kind": "news", "url": "https://www.reseller.co.nz/rss", "region": "NZ", "verified": false, "enabled": true },
+    { "id": "acsc_alerts", "name": "ASD's ACSC alerts", "kind": "advisory", "url": "https://www.cyber.gov.au/rss/alerts", "region": "AU", "verified": false, "enabled": true },
+    { "id": "acsc_advisories", "name": "ASD's ACSC advisories", "kind": "advisory", "url": "https://www.cyber.gov.au/rss/advisories", "region": "AU", "verified": false, "enabled": true },
+    { "id": "gets_nz", "name": "GETS (NZ Government tenders)", "kind": "tender", "url": null, "region": "NZ", "verified": false, "enabled": false, "note": "Find the current RSS URL on gets.govt.nz and paste it here." }
+  ]
+}

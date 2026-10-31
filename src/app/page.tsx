@@ -17,9 +17,9 @@ export default async function PortfolioPage() {
             <h1 className="text-xl font-semibold tracking-tight text-slate-900">Portfolio</h1>
             <p className="text-sm text-slate-600">Your accounts, most urgent first.</p>
           </div>
-          <span className="rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-xs text-slate-500" title="Phase 2">
-            Add account: arrives with intake in Phase 2
-          </span>
+          <Link href="/accounts/new" className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
+            Add account
+          </Link>
         </div>
         {rows.length === 0 ? (
           <Empty>

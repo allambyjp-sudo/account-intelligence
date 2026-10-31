@@ -202,9 +202,11 @@ describe("PoliteFetcher", () => {
       await expect(fetcher.get("https://site.example/a")).resolves.toBeDefined();
     });
 
-    it("treats an unreachable robots.txt as disallow-all", async () => {
+    it("treats an unreachable robots.txt as disallow-all, and says it was unreachable", async () => {
       const { fetcher } = setup({ "https://site.example/robots.txt": () => new Response("", { status: 503 }), "https://site.example/a": ok() });
-      await expect(fetcher.get("https://site.example/a")).rejects.toBeInstanceOf(RobotsDisallowedError);
+      const err = await fetcher.get("https://site.example/a").catch((e: unknown) => e);
+      expect(err).toBeInstanceOf(RobotsDisallowedError);
+      expect((err as Error).message).toMatch(/Couldn't read robots.txt/);
     });
 
     it("skips robots.txt for documented API hosts", async () => {

@@ -5,6 +5,8 @@ export interface JobContext {
   db: Db;
   workerId: string;
   log(message: string): void;
+  /** Lets a job queue follow-up work (e.g. research finishing queues an advisor refresh). */
+  queue: Pick<JobQueue, "send">;
 }
 
 /**
@@ -26,7 +28,8 @@ export interface JobQueue {
   stop(): Promise<void>;
   /** Start working this job (and schedule it, if it has a cron). */
   register<T>(def: JobDefinition<T>, ctx: JobContext): Promise<void>;
-  send<T>(def: JobDefinition<T>, data: T): Promise<string | null>;
+  /** singletonKey: at most one queued job per key (e.g. one advisor refresh per account). */
+  send<T>(def: JobDefinition<T>, data: T, opts?: { singletonKey?: string; startAfterSeconds?: number }): Promise<string | null>;
 }
 
 export const defineJob = <T>(def: JobDefinition<T>): JobDefinition<T> => {

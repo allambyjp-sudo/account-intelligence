@@ -7,12 +7,12 @@ sales advisor, account memory, one-click meeting prep, and email linked to each 
 What sets it apart: deep ANZ public sources, memory that builds over time, meeting prep in one
 click, and email tied to each account.
 
-## Status: Phase 1 of 7 (foundation)
+## Status: building all phases (branch `full-build`)
 
 | # | Phase | Status |
 |---|-------|--------|
 | 1 | Foundation: repo, sign-in, database, model layer with the Anthropic provider, fetch layer, job queue, UI shell | **Done** |
-| 2 | Research agent: intake and entity resolution, ANZ source adapters, the cited brief and brief viewer | Next |
+| 2 | Research agent: intake and entity resolution, ANZ source adapters, the cited brief and brief viewer | **Done** (sources connect later) |
 | 3 | Live monitoring: schedulers, signal classification, timeline, share price | Planned |
 | 4 | Sales advisor and account memory: notes, embeddings, "what's changed" | Planned |
 | 5 | Meeting prep: one-pager, PDF/DOCX export | Planned |

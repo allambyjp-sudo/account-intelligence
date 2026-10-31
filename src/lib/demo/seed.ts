@@ -182,8 +182,7 @@ export async function seedFictionalAccounts(db: Db, ownerUserId: string, now = n
       section: "profile",
       version: 1,
       content: { note: "Fictional seed content" },
-      summaryMd:
-        "Bellbird Logistics Group is a fictional Melbourne-based freight and warehousing business with about 2,400 staff across depots on the east coast. It recently won a state freight consolidation contract and opened a Brisbane cross-dock.",
+      summaryMd: `Bellbird Logistics Group is a fictional Melbourne-based freight and warehousing business with about 2,400 staff across depots on the east coast.[[src:${bAbout.id}]] It recently won a state freight consolidation contract[[src:${bTender.id}]] and opened a Brisbane cross-dock.[[src:${bDepot.id}]]`,
       sourceIds: [bAbout.id, bTender.id, bDepot.id],
       ...SEED_PROMPT,
     });

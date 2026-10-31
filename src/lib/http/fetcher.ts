@@ -1,7 +1,7 @@
 import robotsParser from "robots-parser";
 import type { CachedResponse, HttpCacheStore } from "./cache";
 import { systemClock, type Clock } from "./clock";
-import { BackOffError, FetchFailedError, HttpStatusError, RobotsDisallowedError } from "./errors";
+import { BackOffError, FetchFailedError, HttpStatusError, RobotsDisallowedError, RobotsUnavailableError } from "./errors";
 import { policyFor, type HostPolicy } from "./policy";
 
 export interface FetcherOptions {
@@ -44,6 +44,8 @@ interface RobotsRules {
   allows(url: string): boolean;
   crawlDelayMs: number;
   expiresAt: number;
+  /** True when the rules are "disallow all" because robots.txt couldn't be read. */
+  unreachable?: boolean;
 }
 
 const RETRYABLE = new Set([408, 425, 429, 500, 502, 503, 504]);
@@ -96,7 +98,7 @@ export class PoliteFetcher {
     let minIntervalMs = policy.minIntervalMs;
     if (policy.kind === "web") {
       const rules = await this.robotsFor(u, policy);
-      if (!rules.allows(u.href)) throw new RobotsDisallowedError(u.href);
+      if (!rules.allows(u.href)) throw rules.unreachable ? new RobotsUnavailableError(u.href) : new RobotsDisallowedError(u.href);
       minIntervalMs = Math.max(minIntervalMs, rules.crawlDelayMs);
     }
 
@@ -223,7 +225,7 @@ export class PoliteFetcher {
 }
 
 const allowAll = (expiresAt: number): RobotsRules => ({ allows: () => true, crawlDelayMs: 0, expiresAt });
-const disallowAll = (expiresAt: number): RobotsRules => ({ allows: () => false, crawlDelayMs: 0, expiresAt });
+const disallowAll = (expiresAt: number): RobotsRules => ({ allows: () => false, crawlDelayMs: 0, expiresAt, unreachable: true });
 
 export function retryAfterMs(header: string | null, now: number): number | null {
   if (!header) return null;

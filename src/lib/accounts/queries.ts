@@ -68,6 +68,7 @@ export interface AccountPage {
   /** Every source cited anywhere on the page, by id. */
   sources: Map<string, t.Source>;
   workerLastSeen: Date | null;
+  latestRun: t.ResearchRun | null;
 }
 
 /** Everything the account page shows. Returns null when the account isn't the seller's. */
@@ -79,7 +80,7 @@ export async function loadAccountPage(db: Db, userId: string, accountId: string)
     .limit(1);
   if (!account) return null;
 
-  const [entities, briefRows, stakeholders, techStack, signalRows, threads, recommendations, alerts, heartbeat] = await Promise.all([
+  const [entities, briefRows, stakeholders, techStack, signalRows, threads, recommendations, alerts, heartbeat, runs] = await Promise.all([
     db.select().from(t.entities).where(eq(t.entities.accountId, accountId)).orderBy(desc(t.entities.isPrimary), asc(t.entities.legalName)),
     db.select().from(t.briefSections).where(eq(t.briefSections.accountId, accountId)).orderBy(desc(t.briefSections.version)),
     db.select().from(t.stakeholders).where(eq(t.stakeholders.accountId, accountId)).orderBy(asc(t.stakeholders.fullName)),
@@ -103,6 +104,7 @@ export async function loadAccountPage(db: Db, userId: string, accountId: string)
       .where(and(eq(t.alerts.accountId, accountId), eq(t.alerts.userId, userId), isNull(t.alerts.dismissedAt)))
       .orderBy(desc(t.alerts.createdAt)),
     db.select({ at: sql<Date | null>`max(${t.workerHeartbeats.lastBeatAt})` }).from(t.workerHeartbeats),
+    db.select().from(t.researchRuns).where(eq(t.researchRuns.accountId, accountId)).orderBy(desc(t.researchRuns.createdAt)).limit(1),
   ]);
 
   const contacts = stakeholders.length
@@ -155,5 +157,6 @@ export async function loadAccountPage(db: Db, userId: string, accountId: string)
     alerts,
     sources,
     workerLastSeen: heartbeatAt ? new Date(heartbeatAt) : null,
+    latestRun: runs[0] ?? null,
   };
 }

@@ -13,7 +13,7 @@ async function main() {
   const workerId = `${hostname()}:${process.pid}`;
   const queue = new PgBossQueue({ connectionString: url, timezone: process.env.APP_TIMEZONE });
   await queue.start();
-  const ctx = { db, workerId, log: (m: string) => console.log(`[${workerId}] ${m}`) };
+  const ctx = { db, workerId, log: (m: string) => console.log(`[${workerId}] ${m}`), queue };
   for (const job of ALL_JOBS) await queue.register(job, ctx);
   console.log(`worker ${workerId} running ${ALL_JOBS.map((j) => j.name).join(", ")}`);
 

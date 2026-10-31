@@ -28,6 +28,10 @@ export const HOST_POLICIES: Record<string, Partial<HostPolicy>> = {
   "api.tenders.gov.au": { kind: "api", minIntervalMs: 2_000, cacheTtlMs: 12 * HOUR, note: "AusTender OCDS API. Data under CC BY 3.0 AU." },
   "www.alphavantage.co": { kind: "api", minIntervalMs: 13_000, cacheTtlMs: 12 * HOUR, note: "Free tier: 5 requests/minute, about 25/day." },
   "news.google.com": { kind: "web", minIntervalMs: 5_000, cacheTtlMs: 30 * MINUTE, note: "RSS search feeds only." },
+  "www.asx.com.au": { kind: "web", minIntervalMs: 5_000, cacheTtlMs: 7 * DAY, note: "Listed companies CSV." },
+  "asx.api.markitdigital.com": { kind: "web", minIntervalMs: 5_000, cacheTtlMs: 30 * MINUTE, note: "Disabled until ASX terms are checked." },
+  "graph.microsoft.com": { kind: "api", minIntervalMs: 200, cacheTtlMs: 0, note: "Delegated Mail.Read (Phase 6)." },
+  "api.voyageai.com": { kind: "api", minIntervalMs: 200, cacheTtlMs: 0, note: "Optional embeddings provider." },
 };
 
 export function policyFor(host: string): HostPolicy {

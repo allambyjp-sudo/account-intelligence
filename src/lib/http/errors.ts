@@ -10,6 +10,15 @@ export class RobotsDisallowedError extends FetchPolicyError {
   }
 }
 
+/** robots.txt couldn't be read (network or server error), so the site is off-limits until it can be (RFC 9309). */
+export class RobotsUnavailableError extends RobotsDisallowedError {
+  override name = "RobotsUnavailableError";
+  constructor(url: string) {
+    super(url);
+    this.message = `Couldn't read robots.txt for ${new URL(url).host} (network or server error), so the site is treated as off-limits for now`;
+  }
+}
+
 /** The host asked us to back off for longer than a job should wait. Reschedule after retryAt. */
 export class BackOffError extends FetchPolicyError {
   override name = "BackOffError";

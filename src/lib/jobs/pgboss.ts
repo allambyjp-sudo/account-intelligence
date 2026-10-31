@@ -6,6 +6,8 @@ export interface PgBossQueueOptions {
   /** Postgres schema pg-boss keeps its tables in. */
   schema?: string;
   timezone?: string;
+  /** "sender" is for the web app: it queues jobs but never runs maintenance or schedules. */
+  role?: "worker" | "sender";
 }
 
 /**
@@ -16,9 +18,15 @@ export interface PgBossQueueOptions {
 export class PgBossQueue implements JobQueue {
   private readonly boss: PgBoss;
   private readonly timezone: string;
+  private readonly created = new Set<string>();
 
   constructor(opts: PgBossQueueOptions) {
-    this.boss = new PgBoss({ connectionString: opts.connectionString, schema: opts.schema ?? "pgboss" });
+    const sender = opts.role === "sender";
+    this.boss = new PgBoss({
+      connectionString: opts.connectionString,
+      schema: opts.schema ?? "pgboss",
+      ...(sender ? { supervise: false, schedule: false, max: 2 } : {}),
+    });
     this.boss.on("error", (err) => console.error("[jobs] pg-boss error", err));
     this.timezone = opts.timezone ?? "Australia/Melbourne";
   }
@@ -31,8 +39,14 @@ export class PgBossQueue implements JobQueue {
     await this.boss.stop({ graceful: true });
   }
 
-  async register<T>(def: JobDefinition<T>, ctx: JobContext) {
+  private async ensureQueue(def: JobDefinition<unknown>) {
+    if (this.created.has(def.name)) return;
     await this.boss.createQueue(def.name, { retryLimit: def.retryLimit ?? 3 });
+    this.created.add(def.name);
+  }
+
+  async register<T>(def: JobDefinition<T>, ctx: JobContext) {
+    await this.ensureQueue(def as JobDefinition<unknown>);
     await this.boss.work<unknown>(def.name, async (jobs) => {
       for (const job of jobs) {
         const parsed = def.schema.safeParse(job.data);
@@ -43,8 +57,12 @@ export class PgBossQueue implements JobQueue {
     if (def.cron) await this.boss.schedule(def.name, def.cron, {}, { tz: this.timezone });
   }
 
-  async send<T>(def: JobDefinition<T>, data: T) {
+  async send<T>(def: JobDefinition<T>, data: T, opts: { singletonKey?: string; startAfterSeconds?: number } = {}) {
     const payload = def.schema.parse(data);
-    return this.boss.send(def.name, payload as object);
+    await this.ensureQueue(def as JobDefinition<unknown>);
+    return this.boss.send(def.name, payload as object, {
+      ...(opts.singletonKey ? { singletonKey: opts.singletonKey } : {}),
+      ...(opts.startAfterSeconds ? { startAfter: opts.startAfterSeconds } : {}),
+    });
   }
 }

@@ -27,7 +27,7 @@ describe.skipIf(!hasTestDb)("PgBossQueue", () => {
   });
 
   it("runs a queued heartbeat job that writes to the database", async () => {
-    await queue.register(heartbeatJob, { db: t.db, workerId: "test-worker", log: () => {} });
+    await queue.register(heartbeatJob, { db: t.db, workerId: "test-worker", log: () => {}, queue });
     expect(await queue.send(heartbeatJob, {})).toBeTruthy();
 
     const deadline = Date.now() + 15_000;

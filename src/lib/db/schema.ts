@@ -58,6 +58,10 @@ export const accounts = pgTable("accounts", {
   lastViewedAt: ts("last_viewed_at"),
   createdAt: ts("created_at").notNull().defaultNow(),
   updatedAt: ts("updated_at").notNull().defaultNow(),
+  websiteUrl: text("website_url"),
+  careersUrl: text("careers_url"),
+  reportUrls: text("report_urls").array().notNull().default(sql`'{}'`),
+  newsTerms: text("news_terms").array().notNull().default(sql`'{}'`),
 });
 
 export const sources = pgTable("sources", {
@@ -71,6 +75,7 @@ export const sources = pgTable("sources", {
   retrievedAt: ts("retrieved_at").notNull().defaultNow(),
   contentHash: text("content_hash"),
   excerpt: text("excerpt"),
+  bodyText: text("body_text"),
 });
 
 export const entities = pgTable("entities", {
@@ -89,6 +94,7 @@ export const entities = pgTable("entities", {
   ticker: text("ticker"),
   industry: text("industry"),
   headcount: integer("headcount"),
+  headquarters: text("headquarters"),
   isPrimary: boolean("is_primary").notNull().default(false),
   ...claim(),
   createdAt: ts("created_at").notNull().defaultNow(),
@@ -351,6 +357,58 @@ export const workerHeartbeats = pgTable("worker_heartbeats", {
   version: text("version").notNull(),
 });
 
+/** A registry match offered to the seller on the intake picker. */
+export interface IntakeCandidate {
+  key: string;
+  legalName: string;
+  country: "AU" | "NZ";
+  abn?: string;
+  acn?: string;
+  nzbn?: string;
+  entityType?: string;
+  status?: string;
+  state?: string;
+  postcode?: string;
+  exchange?: "ASX" | "NZX";
+  ticker?: string;
+  industry?: string;
+  score: number;
+  /** Public page a person can open to check the record. Never an API URL (those can carry keys). */
+  sourceUrl: string;
+  adapter: string;
+}
+
+export const intakeRequests = pgTable("intake_requests", {
+  id: id(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  query: text("query").notNull(),
+  country: text("country", { enum: E.INTAKE_COUNTRY }).notNull(),
+  status: text("status", { enum: E.INTAKE_STATUS }).notNull().default("resolving"),
+  candidates: jsonb("candidates").$type<IntakeCandidate[]>().notNull().default([]),
+  notes: jsonb("notes").$type<string[]>().notNull().default([]),
+  accountId: uuid("account_id").references(() => accounts.id, { onDelete: "set null" }),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  updatedAt: ts("updated_at").notNull().defaultNow(),
+});
+
+export const researchRuns = pgTable("research_runs", {
+  id: id(),
+  accountId: uuid("account_id")
+    .notNull()
+    .references(() => accounts.id, { onDelete: "cascade" }),
+  requestedBy: uuid("requested_by").references(() => users.id, { onDelete: "set null" }),
+  status: text("status", { enum: E.RESEARCH_STATUS }).notNull().default("queued"),
+  stage: text("stage"),
+  stats: jsonb("stats").$type<Record<string, unknown>>().notNull().default({}),
+  usage: jsonb("usage").$type<Record<string, number>>().notNull().default({}),
+  error: text("error"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  startedAt: ts("started_at"),
+  finishedAt: ts("finished_at"),
+});
+
 export type User = typeof users.$inferSelect;
 export type Account = typeof accounts.$inferSelect;
 export type Source = typeof sources.$inferSelect;
@@ -367,3 +425,5 @@ export type Meeting = typeof meetings.$inferSelect;
 export type EmailThread = typeof emailThreads.$inferSelect;
 export type EmailSummary = typeof emailSummaries.$inferSelect;
 export type ServicesCatalogueItem = typeof servicesCatalogueItems.$inferSelect;
+export type IntakeRequest = typeof intakeRequests.$inferSelect;
+export type ResearchRun = typeof researchRuns.$inferSelect;

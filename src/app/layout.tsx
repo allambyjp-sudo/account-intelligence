@@ -26,9 +26,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </Link>
             {user && (
               <nav className="flex gap-1 text-sm">
-                <Link href="/" className="rounded-md px-2.5 py-1 text-slate-600 hover:bg-slate-100 hover:text-slate-900">
-                  Portfolio
-                </Link>
+                {[
+                  ["/", "Portfolio"],
+                  ["/accounts/new", "Add account"],
+                  ["/sources", "Sources"],
+                ].map(([href, label]) => (
+                  <Link key={href} href={href!} className="rounded-md px-2.5 py-1 text-slate-600 hover:bg-slate-100 hover:text-slate-900">
+                    {label}
+                  </Link>
+                ))}
               </nav>
             )}
             {user && (

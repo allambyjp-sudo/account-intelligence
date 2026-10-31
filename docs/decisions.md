@@ -105,3 +105,48 @@ Source realities that shape Phase 2 and 3 (checked 30 Oct 2026):
 - Alpha Vantage's free tier allows about 25 calls a day; ASX coverage still needs a test call.
   Yahoo Finance has no official API.
 - AusTender's OCDS API covers awarded contracts (CC BY 3.0 AU). Open tenders are web pages only.
+
+---
+
+## 10. Build every phase now, connect later (31 Oct 2026)
+
+JP's call: build phases 2–6 end to end, plus the Phase 7 preparation, without waiting on
+credentials or the per-phase plan confirmation. Every external dependency sits behind an adapter or
+provider with a test double. `docs/connecting.md` lists what to plug in and what each connection
+unlocks. Work lands on the `full-build` branch, one commit per phase, with CI on each.
+
+The sandbox's network policy blocks the source hosts, so adapter formats come from documentation
+and are marked "format not yet checked live" until `npm run sources:check` confirms them.
+
+## 11. How the research agent keeps "everything cited" (31 Oct 2026)
+
+- Sources are numbered S1..Sn in a pack placed in the system prompt. The pack is identical for the
+  six section calls, so it is cached after the first.
+- The model cites refs; code maps them to source ids and drops any ref it didn't hand out. A claim
+  with no valid ref is stored as Unconfirmed.
+- Quotes are kept only if they appear verbatim in the cited source. Emails are kept as
+  Published only if printed in the cited source and on the account's own domain. Phones only if
+  the digits match. Everything else is dropped and counted in the run's stats.
+- Tech stack items whose evidence excerpt isn't in a cited source drop to low confidence.
+- Brief sections are versioned, never overwritten, and record the prompt id, version and model.
+- A failing section doesn't stop the others; the run ends `partial`.
+- Research never retries automatically, because it spends tokens. The seller re-runs it.
+
+## 12. Web search excludes social networks (31 Oct 2026)
+
+The research agent's web search blocks LinkedIn, Facebook, Instagram, TikTok, X and Seek. Their
+terms prohibit automated collection, and they carry personal detail. Prior roles and statements
+come from company pages, reports, news and talks instead.
+
+## 13. Intake and research run in the worker (31 Oct 2026)
+
+Registry lookups and research are jobs, never request-time fetches. The web app queues them via a
+send-only pg-boss instance and polls. This keeps per-host rate limits in one process and keeps API
+keys out of the web tier's request path. Seller-entered entities are Unconfirmed until research
+finds a source.
+
+## 14. Website tech footprint is deterministic (31 Oct 2026)
+
+Vendors visible in a site's scripts, links and generator tag are detected by rules
+(`src/lib/sources/footprint.ts`), not by the model. They are recorded as `web_footprint` evidence
+at medium confidence: good evidence for the website's own stack, weaker for the wider estate.

@@ -15,6 +15,9 @@ import {
   SourceLink,
   VerificationBadge,
 } from "../../components";
+import { AutoRefresh } from "../../auto-refresh";
+import { citationNumbers, CitedText } from "../../cited";
+import Link from "next/link";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -34,8 +37,10 @@ export default async function AccountPageView({ params }: { params: Promise<{ id
   const page = await loadAccountPage(getDb(), user.id, id);
   if (!page) notFound();
 
+  const running = page.latestRun && (page.latestRun.status === "queued" || page.latestRun.status === "running");
   return (
     <div className="space-y-4">
+      {running && <AutoRefresh seconds={5} />}
       <Header page={page} />
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,1fr)]">
         <div className="space-y-4">
@@ -88,6 +93,9 @@ function Header({ page }: { page: AccountPage }) {
       <div className="text-right text-xs text-slate-500">
         <div className="text-sm font-medium text-slate-800">{e?.ticker ? `${e.exchange}:${e.ticker}` : "Unlisted"}</div>
         <div>{e?.ticker ? "Share price arrives in Phase 3" : "No share price"}</div>
+        <Link href={`/accounts/${account.id}/settings`} className="text-brand-700 hover:underline">
+          Settings
+        </Link>
         <div className="mt-1">Last researched {account.lastResearchedAt ? formatDateTime(account.lastResearchedAt) : "never"}</div>
         <div>Worker last seen {timeAgo(page.workerLastSeen)}</div>
       </div>
@@ -97,23 +105,31 @@ function Header({ page }: { page: AccountPage }) {
 
 function BriefSummary({ page }: { page: AccountPage }) {
   const sections = (Object.keys(SECTION_TITLES) as BriefSectionKind[]).filter((s) => page.brief[s] && s !== "stakeholders" && s !== "tech_stack");
+  const run = page.latestRun;
+  const running = run && (run.status === "queued" || run.status === "running");
   return (
-    <Card title="Brief">
+    <Card
+      title="Brief"
+      action={
+        <Link href={`/accounts/${page.account.id}/brief`} className="text-xs text-brand-700 hover:underline">
+          Full brief →
+        </Link>
+      }
+    >
+      {running && <p className="mb-2 rounded-md bg-sky-50 px-2 py-1 text-xs text-sky-800">Research {run.status}{run.stage ? `: ${humanise(run.stage)}` : ""}…</p>}
       {sections.length === 0 ? (
-        <Empty>The research agent writes the cited brief in Phase 2.</Empty>
+        <Empty>{running ? "The brief appears here when research finishes." : "No brief yet. Open the full brief to run research."}</Empty>
       ) : (
         <div className="space-y-4">
           {sections.map((s) => {
             const b = page.brief[s]!;
+            const numbers = citationNumbers(b.sourceIds);
             return (
               <div key={s}>
                 <h3 className="text-sm font-semibold text-slate-800">{SECTION_TITLES[s]}</h3>
-                <p className="mt-1 whitespace-pre-line text-sm text-slate-700">{b.summaryMd}</p>
-                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
-                  {b.sourceIds.map((sid) => (
-                    <SourceLink key={sid} source={page.sources.get(sid)} />
-                  ))}
-                </div>
+                <p className="mt-1 text-sm text-slate-700">
+                  <CitedText text={b.summaryMd} numbers={numbers} sources={page.sources} />
+                </p>
               </div>
             );
           })}
