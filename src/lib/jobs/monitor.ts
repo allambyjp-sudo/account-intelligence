@@ -2,7 +2,7 @@ import { z } from "zod";
 import { createFetcher } from "@/lib/http";
 import { getLLMProvider } from "@/lib/llm/registry";
 import { matchAdvisories } from "@/lib/monitor/advisories";
-import { accountsWithPendingSignals, classifySignals } from "@/lib/monitor/classify";
+import { accountsWithPendingSignals, classifySignals, type ClassifyResult } from "@/lib/monitor/classify";
 import { accountsToMonitor, monitorAccount } from "@/lib/monitor/poll";
 import { raiseQuietAlerts } from "@/lib/monitor/quiet";
 import { defineJob, type JobContext } from "./types";
@@ -12,8 +12,8 @@ import { defineJob, type JobContext } from "./types";
  * don't collide with everyone else's cron jobs.
  */
 
-/** Called when classification finds high-importance signals. Phase 4 points this at the advisor. */
-export const highSignalHooks: Array<(accountId: string, ctx: JobContext) => Promise<void>> = [];
+/** Called after each classification batch. The advisor module registers memory sync and advisor refresh. */
+export const afterClassifyHooks: Array<(accountId: string, result: ClassifyResult, ctx: JobContext) => Promise<void>> = [];
 
 export const classifySignalsJob = defineJob({
   name: "classify-signals",
@@ -23,7 +23,7 @@ export const classifySignalsJob = defineJob({
     // Batches of 15: loop until the account's queue is empty, capped so one account can't hog the worker.
     for (let i = 0; i < 5; i++) {
       const res = await classifySignals(ctx.db, getLLMProvider(), accountId);
-      if (res.high.length) for (const hook of highSignalHooks) await hook(accountId, ctx);
+      if (res.classified) for (const hook of afterClassifyHooks) await hook(accountId, res, ctx);
       if (res.classified < 15) break;
     }
   },

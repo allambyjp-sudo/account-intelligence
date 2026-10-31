@@ -169,3 +169,25 @@ at medium confidence: good evidence for the website's own stack, weaker for the 
 - ACSC advisories are matched to accounts by specific product names in their tech stack, never by
   vendor alone ("Microsoft" would match every account).
 - Quiet-customer alerts: one open alert per key account past its quiet threshold, checked daily.
+
+## 16. Account memory and the advisor (31 Oct 2026)
+
+- **Memory** is notes, meetings with prep, email summaries, relevant classified signals and the
+  latest version of each brief section. It is chunked (about 1,200 characters) and embedded. Vectors
+  carry a key of provider, model and dimensions, and search only compares like with like. That key
+  came from a test: the same model at a different output size must never be compared.
+- **No fixed vector dimension and no approximate index.** Retrieval is per account (hundreds of
+  rows), so an exact scan is fast, and the embedding model can change without a migration.
+- **Embeddings:** `mock` (default; hash-based, for tests), `local` (transformers.js, optional
+  package, nothing leaves the machine) or `voyage` (needs a key). Changing provider means a re-sync,
+  which `memory-sync` does by itself, since it indexes whatever has no vector for the current key.
+- **What's changed since you last looked** uses a beacon the page fires after rendering, not the
+  page load itself, so link prefetching never marks an account as seen.
+- **The advisor** sees the brief, high and medium signals from the last 90 days, notes (including
+  open next steps), recent email summaries, older notes found by meaning, and facts computed in
+  code (days since contact, champions who left or went quiet). Evidence is labelled E1..En; items
+  citing no valid label are dropped. Old advice is superseded, not deleted.
+- **It refreshes only when something meaningful changes:** a hash of its inputs must differ, and
+  it is triggered by research finishing, high-importance signals, or a meeting, outcome,
+  opportunity or next-step note. Triggers within a minute collapse into one run. "Refresh" forces a run.
+- Meeting and outcome notes move "last contact" forward, which drives quiet-customer alerts.

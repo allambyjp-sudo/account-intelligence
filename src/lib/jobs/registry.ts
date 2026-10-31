@@ -1,3 +1,4 @@
+import { advisorRefreshJob, memorySyncJob } from "./advisor";
 import { heartbeatJob } from "./heartbeat";
 import { advisoriesJob, classifySignalsJob, classifySweepJob, monitorAccountJob, monitorSweepJob, quietCheckJob } from "./monitor";
 import { researchAccountJob, resolveIntakeJob } from "./research";
@@ -14,4 +15,6 @@ export const ALL_JOBS = [
   classifySignalsJob,
   advisoriesJob,
   quietCheckJob,
+  memorySyncJob,
+  advisorRefreshJob,
 ] as unknown as JobDefinition<never>[];

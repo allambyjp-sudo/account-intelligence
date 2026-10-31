@@ -21,6 +21,12 @@ import * as E from "@/lib/domain/enums";
 const id = () => uuid("id").primaryKey().defaultRandom();
 const ts = (name: string) => timestamp(name, { withTimezone: true, mode: "date" });
 const bytea = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => "bytea" });
+/** pgvector without a fixed dimension (see db/migrations/0004_memory.sql). */
+const vector = customType<{ data: number[]; driverData: string }>({
+  dataType: () => "vector",
+  toDriver: (v) => `[${v.join(",")}]`,
+  fromDriver: (v) => (typeof v === "string" ? (JSON.parse(v) as number[]) : (v as unknown as number[])),
+});
 
 /** The columns every claim-bearing row carries. */
 const claim = () => ({
@@ -63,6 +69,8 @@ export const accounts = pgTable("accounts", {
   reportUrls: text("report_urls").array().notNull().default(sql`'{}'`),
   newsTerms: text("news_terms").array().notNull().default(sql`'{}'`),
   lastPolledAt: ts("last_polled_at"),
+  advisorFingerprint: text("advisor_fingerprint"),
+  advisorRefreshedAt: ts("advisor_refreshed_at"),
 });
 
 export const sources = pgTable("sources", {
@@ -353,6 +361,21 @@ export const servicesCatalogueItems = pgTable("services_catalogue_items", {
   updatedAt: ts("updated_at").notNull().defaultNow(),
 });
 
+export const memoryChunks = pgTable("memory_chunks", {
+  id: id(),
+  accountId: uuid("account_id")
+    .notNull()
+    .references(() => accounts.id, { onDelete: "cascade" }),
+  kind: text("kind", { enum: E.MEMORY_KIND }).notNull(),
+  refId: uuid("ref_id").notNull(),
+  chunkIndex: integer("chunk_index").notNull().default(0),
+  text: text("text").notNull(),
+  model: text("model").notNull(),
+  embedding: vector("embedding").notNull(),
+  occurredAt: ts("occurred_at").notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+
 export const httpCache = pgTable("http_cache", {
   cacheKey: text("cache_key").primaryKey(),
   url: text("url").notNull(),
@@ -442,4 +465,5 @@ export type EmailSummary = typeof emailSummaries.$inferSelect;
 export type ServicesCatalogueItem = typeof servicesCatalogueItems.$inferSelect;
 export type IntakeRequest = typeof intakeRequests.$inferSelect;
 export type PricePoint = typeof pricePoints.$inferSelect;
+export type MemoryChunk = typeof memoryChunks.$inferSelect;
 export type ResearchRun = typeof researchRuns.$inferSelect;

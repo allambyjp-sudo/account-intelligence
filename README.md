@@ -13,8 +13,8 @@ click, and email tied to each account.
 |---|-------|--------|
 | 1 | Foundation: repo, sign-in, database, model layer with the Anthropic provider, fetch layer, job queue, UI shell | **Done** |
 | 2 | Research agent: intake and entity resolution, ANZ source adapters, the cited brief and brief viewer | **Done** (sources connect later) |
-| 3 | Live monitoring: schedulers, signal classification, timeline, share price | Planned |
-| 4 | Sales advisor and account memory: notes, embeddings, "what's changed" | Planned |
+| 3 | Live monitoring: schedulers, signal classification, timeline, share price | **Done** |
+| 4 | Sales advisor and account memory: notes, embeddings, "what's changed" | **Done** |
 | 5 | Meeting prep: one-pager, PDF/DOCX export | Planned |
 | 6 | Email: Graph ingestion against a test mailbox with synthetic data, matching, seller inbox | Planned |
 | 7 | Conver: ConverProvider, Datacom tenant hosting, IT and privacy review | Planned |

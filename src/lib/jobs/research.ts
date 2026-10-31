@@ -3,6 +3,7 @@ import { createFetcher } from "@/lib/http";
 import { resolveIntake } from "@/lib/intake/intake";
 import { getLLMProvider } from "@/lib/llm/registry";
 import { runResearch } from "@/lib/research/run";
+import { queueAdvisorRefresh } from "./advisor";
 import { defineJob } from "./types";
 
 export const resolveIntakeJob = defineJob({
@@ -22,5 +23,6 @@ export const researchAccountJob = defineJob({
   async handle({ runId }, ctx) {
     const run = await runResearch({ db: ctx.db, llm: getLLMProvider(), fetcher: createFetcher(ctx.db), env: process.env }, runId);
     ctx.log(`research ${runId} for ${run.accountId}: ${run.status}`);
+    if (run.status === "succeeded" || run.status === "partial") await queueAdvisorRefresh(ctx.queue, run.accountId);
   },
 });

@@ -19,7 +19,12 @@ import { AutoRefresh } from "../../auto-refresh";
 import { citationNumbers, CitedText } from "../../cited";
 import Link from "next/link";
 import { pollNow } from "../../actions/accounts";
+import { addNote, completeNote, refreshAdvice, setRecommendationStatus } from "../../actions/memory";
+import { MarkViewed, NoteForm } from "../../memory-client";
 import { Sparkline } from "../../sparkline";
+import { whatsChanged, type WhatsChanged } from "@/lib/memory/changes";
+import { searchMemory, type MemoryHit } from "@/lib/memory/memory";
+import { getEmbeddingProvider } from "@/lib/llm/registry";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -32,17 +37,30 @@ const SECTION_TITLES: Record<BriefSectionKind, string> = {
   services_fit: `${ORG_NAME} fit`,
 };
 
-export default async function AccountPageView({ params }: { params: Promise<{ id: string }> }) {
+export default async function AccountPageView({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ q?: string }> }) {
   const { id } = await params;
+  const { q } = await searchParams;
   const user = await requireUser(`/accounts/${id}`);
   if (!UUID.test(id)) notFound();
-  const page = await loadAccountPage(getDb(), user.id, id);
+  const db = getDb();
+  const page = await loadAccountPage(db, user.id, id);
   if (!page) notFound();
+  const changes = await whatsChanged(db, id, user.id, page.account.lastViewedAt);
+  let hits: MemoryHit[] | null = null;
+  let searchError: string | null = null;
+  if (q?.trim()) {
+    try {
+      hits = await searchMemory(db, getEmbeddingProvider(), id, q.trim().slice(0, 300), 8);
+    } catch (err) {
+      searchError = err instanceof Error ? err.message : String(err);
+    }
+  }
 
   const running = page.latestRun && (page.latestRun.status === "queued" || page.latestRun.status === "running");
   return (
     <div className="space-y-4">
       {running && <AutoRefresh seconds={5} />}
+      <MarkViewed accountId={page.account.id} />
       <Header page={page} />
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,1fr)]">
         <div className="space-y-4">
@@ -51,11 +69,13 @@ export default async function AccountPageView({ params }: { params: Promise<{ id
           <TechStack page={page} />
         </div>
         <div className="space-y-4">
+          <Changes changes={changes} />
           <Timeline items={page.timeline} />
         </div>
         <div className="space-y-4">
           <Advisor page={page} />
           <Alerts page={page} />
+          <Memory page={page} q={q} hits={hits} searchError={searchError} />
           <Card title="Meeting prep">
             <button disabled className="w-full cursor-not-allowed rounded-lg bg-slate-100 px-4 py-2 text-sm text-slate-500" title="Phase 5">
               Prepare for a meeting
@@ -260,31 +280,148 @@ function Timeline({ items }: { items: TimelineItem[] }) {
 }
 
 function Advisor({ page }: { page: AccountPage }) {
+  const who = (id: string | null) => (id ? page.stakeholders.find((s) => s.id === id)?.fullName : undefined);
   return (
-    <Card title="Sales advisor">
+    <Card
+      title="Sales advisor"
+      action={
+        <form action={refreshAdvice}>
+          <input type="hidden" name="accountId" value={page.account.id} />
+          <button className="text-xs text-brand-700 hover:underline" title={page.account.advisorRefreshedAt ? `Last refreshed ${formatDateTime(page.account.advisorRefreshedAt)}` : "Never run"}>
+            Refresh
+          </button>
+        </form>
+      }
+    >
       {page.recommendations.length === 0 ? (
-        <Empty>Next best actions, talking points and risk flags arrive in Phase 4.</Empty>
+        <Empty>No advice yet. It appears after research, high-importance signals or new notes, and only changes when something meaningful does.</Empty>
       ) : (
         <ul className="space-y-3">
           {page.recommendations.map((r) => (
             <li key={r.id}>
-              <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">{humanise(r.kind)}</div>
+              <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                {humanise(r.kind)}
+                {who(r.targetStakeholderId) && <span className="normal-case"> · {who(r.targetStakeholderId)}</span>}
+              </div>
               <div className="text-sm font-medium text-slate-900">{r.title}</div>
               <p className="text-sm text-slate-600">{r.body}</p>
-              <div className="mt-0.5 flex flex-wrap gap-x-3">
-                {r.evidence.map((e, i) =>
-                  e.kind === "source" ? (
-                    <SourceLink key={i} source={page.sources.get(e.sourceId)} />
-                  ) : (
-                    <span key={i} className="text-[11px] text-slate-500">
-                      Evidence: {e.kind}
-                    </span>
-                  ),
-                )}
+              <ul className="mt-0.5 space-y-0.5">
+                {r.evidence.map((e, i) => {
+                  if (e.kind === "source") return <li key={i}><SourceLink source={page.sources.get(e.sourceId)} /></li>;
+                  const id = e.kind === "signal" ? e.signalId : e.kind === "note" ? e.noteId : e.threadId;
+                  const ev = page.evidenceLabels.get(id);
+                  return (
+                    <li key={i} className="text-[11px] text-slate-500">
+                      {ev?.url ? (
+                        <a href={ev.url} target="_blank" rel="noopener noreferrer" className="underline decoration-slate-300 underline-offset-2 hover:text-brand-700">
+                          {ev.label}
+                        </a>
+                      ) : (
+                        (ev?.label ?? `Evidence: ${e.kind}`)
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+              <div className="mt-1 flex gap-3 text-[11px]">
+                {(["done", "dismissed"] as const).map((status) => (
+                  <form key={status} action={setRecommendationStatus}>
+                    <input type="hidden" name="accountId" value={page.account.id} />
+                    <input type="hidden" name="recommendationId" value={r.id} />
+                    <input type="hidden" name="status" value={status} />
+                    <button className="text-slate-500 hover:text-brand-700">{status === "done" ? "Done" : "Dismiss"}</button>
+                  </form>
+                ))}
               </div>
             </li>
           ))}
         </ul>
+      )}
+    </Card>
+  );
+}
+
+function Changes({ changes }: { changes: WhatsChanged }) {
+  if (!changes.since) return null;
+  return (
+    <Card title="What's changed since you last looked">
+      <p className="mb-2 text-xs text-slate-500">Since {formatDateTime(changes.since)}</p>
+      {changes.items.length === 0 ? (
+        <p className="text-sm text-slate-600">Nothing new.</p>
+      ) : (
+        <ul className="space-y-1.5">
+          {changes.items.map((c, i) => (
+            <li key={i} className="flex items-start gap-2 text-sm">
+              {c.importance ? <ImportanceBadge importance={c.importance} /> : <Badge className="bg-slate-100 text-slate-600 ring-slate-500/20">{humanise(c.kind)}</Badge>}
+              <span>
+                <span className="text-slate-900">{c.title}</span>
+                {c.detail && <span className="block text-xs text-slate-500">{c.detail}</span>}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
+function Memory({ page, q, hits, searchError }: { page: AccountPage; q?: string; hits: MemoryHit[] | null; searchError: string | null }) {
+  const open = page.notes.filter((n) => n.kind === "next_step" && !n.completedAt);
+  const recent = page.notes.filter((n) => !(n.kind === "next_step" && !n.completedAt)).slice(0, 8);
+  return (
+    <Card title="Account memory">
+      <NoteForm accountId={page.account.id} action={addNote} />
+      {open.length > 0 && (
+        <div className="mt-4">
+          <h3 className="text-xs font-semibold uppercase text-slate-500">Open next steps</h3>
+          <ul className="mt-1 space-y-1">
+            {open.map((n) => (
+              <li key={n.id} className="flex items-start justify-between gap-2 text-sm">
+                <span>
+                  {n.body}
+                  {n.dueOn && <span className="ml-1 text-xs text-slate-500">due {formatDate(n.dueOn)}</span>}
+                </span>
+                <form action={completeNote}>
+                  <input type="hidden" name="accountId" value={page.account.id} />
+                  <input type="hidden" name="noteId" value={n.id} />
+                  <button className="text-xs text-brand-700 hover:underline">Done</button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <form className="mt-4 flex gap-2" method="get">
+        <input name="q" defaultValue={q} placeholder="Search this account's memory" className="min-w-0 flex-1 rounded-md border border-slate-300 px-2 py-1 text-sm" />
+        <button className="rounded-md border border-slate-300 px-2 py-1 text-sm text-slate-700 hover:bg-slate-50">Search</button>
+      </form>
+      {searchError && <p className="mt-2 text-xs text-red-700">{searchError}</p>}
+      {hits && (
+        <ul className="mt-2 space-y-1.5">
+          {hits.length === 0 && <li className="text-sm text-slate-500">Nothing found.</li>}
+          {hits.map((h) => (
+            <li key={h.refId} className="text-sm">
+              <Badge className="bg-slate-100 text-slate-600 ring-slate-500/20">{humanise(h.kind)}</Badge> <span className="text-xs text-slate-500">{formatDate(h.occurredAt)}</span>
+              <p className="line-clamp-3 text-slate-700">{h.text}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+      {recent.length > 0 && (
+        <div className="mt-4">
+          <h3 className="text-xs font-semibold uppercase text-slate-500">Recent</h3>
+          <ul className="mt-1 space-y-1.5">
+            {recent.map((n) => (
+              <li key={n.id} className="text-sm">
+                <span className="text-xs text-slate-500">
+                  {formatDate(n.occurredAt)} · {humanise(n.kind)}
+                  {n.inputMethod === "voice" && " · dictated"}
+                </span>
+                <p className="line-clamp-3 whitespace-pre-line text-slate-700">{n.body}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </Card>
   );

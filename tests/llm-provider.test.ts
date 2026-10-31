@@ -197,9 +197,11 @@ describe("provider registry", () => {
     expect(() => createLLMProvider({ LLM_PROVIDER: "openai" })).toThrow(/Unknown LLM_PROVIDER/);
   });
 
-  it("is honest that real embeddings arrive in Phase 4", () => {
+  it("picks the embedding provider, and says what's missing", () => {
     expect(createEmbeddingProvider({}).name).toBe("mock");
-    expect(() => createEmbeddingProvider({ EMBEDDING_PROVIDER: "voyage" })).toThrow(/Phase 4/);
+    expect(createEmbeddingProvider({ EMBEDDING_PROVIDER: "local" }).name).toBe("local");
+    expect(() => createEmbeddingProvider({ EMBEDDING_PROVIDER: "voyage" })).toThrow(/VOYAGE_API_KEY/);
+    expect(createEmbeddingProvider({ EMBEDDING_PROVIDER: "voyage", VOYAGE_API_KEY: "k" }).model).toBe("voyage-3.5");
   });
 });
 

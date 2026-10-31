@@ -70,6 +70,9 @@ export interface AccountPage {
   workerLastSeen: Date | null;
   latestRun: t.ResearchRun | null;
   prices: Array<{ tradeDate: string; close: number; currency: string }>;
+  notes: t.Note[];
+  /** Labels for recommendation evidence that isn't a source: signals, notes and emails. */
+  evidenceLabels: Map<string, { label: string; url?: string }>;
 }
 
 /** Everything the account page shows. Returns null when the account isn't the seller's. */
@@ -145,6 +148,29 @@ export async function loadAccountPage(db: Db, userId: string, accountId: string)
     })),
   ].sort((a, b) => b.at.getTime() - a.at.getTime());
 
+  const notes = await db
+    .select()
+    .from(t.notes)
+    .where(eq(t.notes.accountId, accountId))
+    .orderBy(desc(t.notes.occurredAt))
+    .limit(30);
+
+  // Recommendation evidence that points at signals, notes or emails, resolved to something readable.
+  const evidenceLabels = new Map<string, { label: string; url?: string }>();
+  const evSignals = recommendations.flatMap((r) => r.evidence.flatMap((e) => (e.kind === "signal" ? [e.signalId] : [])));
+  const evNotes = recommendations.flatMap((r) => r.evidence.flatMap((e) => (e.kind === "note" ? [e.noteId] : [])));
+  const evThreads = recommendations.flatMap((r) => r.evidence.flatMap((e) => (e.kind === "email" ? [e.threadId] : [])));
+  if (evSignals.length) {
+    const rows = await db.select({ s: t.signals, src: t.sources }).from(t.signals).innerJoin(t.sources, eq(t.signals.sourceId, t.sources.id)).where(inArray(t.signals.id, evSignals));
+    for (const { s, src } of rows) evidenceLabels.set(s.id, { label: s.title, url: src.url });
+  }
+  if (evNotes.length) {
+    for (const n of await db.select().from(t.notes).where(inArray(t.notes.id, evNotes))) evidenceLabels.set(n.id, { label: `Your ${n.kind.replace("_", " ")}: ${n.body.slice(0, 80)}${n.body.length > 80 ? "…" : ""}` });
+  }
+  if (evThreads.length) {
+    for (const th of await db.select().from(t.emailThreads).where(inArray(t.emailThreads.id, evThreads))) evidenceLabels.set(th.id, { label: `Email: ${th.subject}` });
+  }
+
   const primaryEntity = entities.find((e) => e.isPrimary) ?? null;
   const prices = primaryEntity?.ticker
     ? (
@@ -173,5 +199,7 @@ export async function loadAccountPage(db: Db, userId: string, accountId: string)
     workerLastSeen: heartbeatAt ? new Date(heartbeatAt) : null,
     latestRun: runs[0] ?? null,
     prices,
+    notes,
+    evidenceLabels,
   };
 }

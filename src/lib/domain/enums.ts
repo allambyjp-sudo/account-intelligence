@@ -183,3 +183,6 @@ export type IntakeStatus = (typeof INTAKE_STATUS)[number];
 
 export const RESEARCH_STATUS = ["queued", "running", "succeeded", "partial", "failed"] as const;
 export type ResearchStatus = (typeof RESEARCH_STATUS)[number];
+
+export const MEMORY_KIND = ["note", "meeting", "email_summary", "signal", "brief_section"] as const;
+export type MemoryKind = (typeof MEMORY_KIND)[number];

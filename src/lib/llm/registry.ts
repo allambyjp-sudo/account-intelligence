@@ -1,4 +1,5 @@
 import { AnthropicProvider } from "./anthropic";
+import { LocalEmbeddingProvider, VoyageEmbeddingProvider } from "./embeddings";
 import { ConverProvider } from "./conver";
 import { LLMNotConfiguredError } from "./errors";
 import { MockEmbeddingProvider, MockProvider } from "./mock";
@@ -32,8 +33,9 @@ export function createEmbeddingProvider(env: Env = process.env): EmbeddingProvid
     case "mock":
       return new MockEmbeddingProvider();
     case "local":
+      return new LocalEmbeddingProvider(env);
     case "voyage":
-      throw new LLMNotConfiguredError(`EMBEDDING_PROVIDER=${name} arrives with account memory in Phase 4`);
+      return new VoyageEmbeddingProvider(env);
     default:
       throw new LLMNotConfiguredError(`Unknown EMBEDDING_PROVIDER "${name}"`);
   }
