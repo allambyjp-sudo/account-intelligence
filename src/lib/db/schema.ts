@@ -296,6 +296,8 @@ export const meetings = pgTable("meetings", {
   otherAttendees: jsonb("other_attendees").$type<{ name: string; role?: string }[]>().notNull().default([]),
   prep: jsonb("prep").$type<unknown>(),
   prepGeneratedAt: ts("prep_generated_at"),
+  prepRequestedAt: ts("prep_requested_at"),
+  prepError: text("prep_error"),
   promptId: text("prompt_id"),
   promptVersion: integer("prompt_version"),
   model: text("model"),

@@ -2,8 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
-  // pg-boss and the Anthropic SDK are server-only and should load from node_modules at runtime.
-  serverExternalPackages: ["pg-boss", "@azure/msal-node"],
+  // Server-only packages that load files from their own folders at runtime (pdfkit's fonts) or
+  // shouldn't be bundled.
+  serverExternalPackages: ["pg-boss", "@azure/msal-node", "pdfkit", "docx", "unpdf"],
   async headers() {
     return [
       {

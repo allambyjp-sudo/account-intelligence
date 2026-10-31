@@ -71,6 +71,7 @@ export interface AccountPage {
   latestRun: t.ResearchRun | null;
   prices: Array<{ tradeDate: string; close: number; currency: string }>;
   notes: t.Note[];
+  meetings: t.Meeting[];
   /** Labels for recommendation evidence that isn't a source: signals, notes and emails. */
   evidenceLabels: Map<string, { label: string; url?: string }>;
 }
@@ -148,12 +149,10 @@ export async function loadAccountPage(db: Db, userId: string, accountId: string)
     })),
   ].sort((a, b) => b.at.getTime() - a.at.getTime());
 
-  const notes = await db
-    .select()
-    .from(t.notes)
-    .where(eq(t.notes.accountId, accountId))
-    .orderBy(desc(t.notes.occurredAt))
-    .limit(30);
+  const [notes, meetings] = await Promise.all([
+    db.select().from(t.notes).where(eq(t.notes.accountId, accountId)).orderBy(desc(t.notes.occurredAt)).limit(30),
+    db.select().from(t.meetings).where(eq(t.meetings.accountId, accountId)).orderBy(desc(t.meetings.createdAt)).limit(5),
+  ]);
 
   // Recommendation evidence that points at signals, notes or emails, resolved to something readable.
   const evidenceLabels = new Map<string, { label: string; url?: string }>();
@@ -200,6 +199,7 @@ export async function loadAccountPage(db: Db, userId: string, accountId: string)
     latestRun: runs[0] ?? null,
     prices,
     notes,
+    meetings,
     evidenceLabels,
   };
 }

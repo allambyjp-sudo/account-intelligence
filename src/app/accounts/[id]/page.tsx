@@ -77,10 +77,21 @@ export default async function AccountPageView({ params, searchParams }: { params
           <Alerts page={page} />
           <Memory page={page} q={q} hits={hits} searchError={searchError} />
           <Card title="Meeting prep">
-            <button disabled className="w-full cursor-not-allowed rounded-lg bg-slate-100 px-4 py-2 text-sm text-slate-500" title="Phase 5">
+            <Link href={`/accounts/${page.account.id}/meetings/new`} className="block w-full rounded-lg bg-brand-600 px-4 py-2 text-center text-sm font-medium text-white hover:bg-brand-700">
               Prepare for a meeting
-            </button>
-            <p className="mt-2 text-xs text-slate-500">One-click one-pager with attendee profiles and openers arrives in Phase 5.</p>
+            </Link>
+            {page.meetings.length > 0 && (
+              <ul className="mt-3 space-y-1 text-sm">
+                {page.meetings.map((m) => (
+                  <li key={m.id}>
+                    <Link href={`/accounts/${page.account.id}/meetings/${m.id}`} className="text-brand-700 hover:underline">
+                      {m.title}
+                    </Link>
+                    <span className="text-xs text-slate-500"> · {m.scheduledFor ? formatDate(m.scheduledFor) : formatDate(m.createdAt)}{m.prepError ? " · failed" : !m.prep ? " · preparing" : ""}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </Card>
         </div>
       </div>

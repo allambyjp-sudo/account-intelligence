@@ -191,3 +191,17 @@ at medium confidence: good evidence for the website's own stack, weaker for the 
   it is triggered by research finishing, high-importance signals, or a meeting, outcome,
   opportunity or next-step note. Triggers within a minute collapse into one run. "Refresh" forces a run.
 - Meeting and outcome notes move "last contact" forward, which drives quiet-customer alerts.
+
+## 17. Meeting prep (31 Oct 2026)
+
+- Prep runs as a job (it can take a minute). The meeting page polls, shows a clear failure with
+  "Try again" if generation fails, and can regenerate.
+- Evidence: signals since the last contact (not just "recent"), open next steps, recent email with
+  action items, and notes about each attendee found by meaning. "Changes since we last spoke" and
+  "open actions" without evidence are dropped; they would otherwise be guesses.
+- The prep stores frozen evidence labels and links, so exports never depend on rows that may
+  later change or be deleted.
+- One format-neutral one-pager model renders the web page, Word (docx) and PDF (PDFKit, built-in
+  Helvetica, so no font files to ship). The export route checks ownership and is not cached.
+- The meeting time is entered and shown in Melbourne time, with daylight saving taken from the
+  platform's time zone data.
