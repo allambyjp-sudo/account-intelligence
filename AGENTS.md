@@ -11,6 +11,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 ## Project rules (Account Intelligence Platform)
 
 - Work phase by phase (README status table). Confirm the plan for a phase before writing its code.
+  (JP waived this for the full build on 31 Oct 2026; see docs/decisions.md §10. Resume it for changes.)
 - Strict TypeScript. Tests for every source adapter and for email matching.
 - Every LLM call goes through `LLMProvider` (`src/lib/llm`). Every prompt lives in `/prompts`, with its
   version bumped when its output changes.

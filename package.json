@@ -18,7 +18,8 @@
     "db:migrate": "tsx scripts/migrate.ts",
     "db:seed": "tsx scripts/seed.ts",
     "catalogue:sync": "tsx scripts/catalogue-sync.ts",
-    "llm:smoke": "tsx scripts/llm-smoke.ts"
+    "llm:smoke": "tsx scripts/llm-smoke.ts",
+    "sources:check": "tsx scripts/sources-check.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.3.0",
@@ -34,6 +35,7 @@
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "robots-parser": "^3.0.1",
+    "tsx": "^4.23.15",
     "unpdf": "^1.9.1",
     "yaml": "^2.9.1",
     "zod": "^4.6.7"
@@ -47,7 +49,6 @@
     "@types/react-dom": "^19.3.0",
     "postcss": "^8.5.32",
     "tailwindcss": "^4.3.3",
-    "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "vitest": "^5.0.5"
   }

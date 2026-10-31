@@ -10,8 +10,10 @@ development sign-in (`AUTH_DEV_BYPASS=true`) works without it.
 - **Which tenant.** Use a tenant you control for development (the personal test tenant from the
   LIP work is fine). Don't register this app in Datacom's production tenant until IT has approved
   it (brief, phase 7).
-- **Sign-in only for now.** The only permission is `User.Read`, which Entra grants by default.
-  Phase 6 adds delegated `Mail.Read` to the same registration, with consent at that point.
+- **Sign-in first.** Sign-in only needs `User.Read`, which Entra grants by default. Email
+  (Phase 6) uses the same registration: add the delegated `Mail.Read` permission and a second
+  redirect URI, `http://localhost:3000/api/connect/graph/callback`. The app refuses to connect a
+  real mailbox until it is approved; see `docs/connecting.md` §9.
 - **Secrets never go in chat or git.** They go in `.env` locally, or in the environment's secret
   settings when hosted.
 
